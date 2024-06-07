@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In and Sign Up Form</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/ccef8b4d67.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+</head>
+<body>
+    <div class="container" id="authContainer">
+        <div class="form-box">
+            <h1 id="title">Sign In</h1>
+            <form id="form">
+                <div class="input-group">
+                    <div class="input-field" id="nameField" style="max-height: 0;">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="name" placeholder="Name">
+                    </div>
+                    <div class="input-field">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="text" id="email" placeholder="Email">
+                    </div>
+                    <div class="input-field">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password" placeholder="Password">
+                    </div>
+                    <p>Lost Password <a href="#">Click Here!</a></p>
+                </div>
+                <div class="btn-field">
+                    <button type="button" id="signupBtn">Sign up</button>
+                    <button type="submit" id="signinBtn">Sign in</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Video Player Container -->
+    <div class="container" id="videoContainer" style="display:none;">
+        <video id="videoPlayer" controls></video>
+    </div>
+
+    <script>
+        let signupBtn = document.getElementById("signupBtn");
+        let signinBtn = document.getElementById("signinBtn");
+        let nameField = document.getElementById("nameField");
+        let title = document.getElementById("title");
+        let form = document.getElementById("form");
+
+        signinBtn.onclick = function () {
+            nameField.style.maxHeight = "0";
+            title.innerHTML = "Sign In";
+            signupBtn.classList.remove("disable");
+            signinBtn.classList.add("disable");
+        }
+
+        signupBtn.onclick = function () {
+            nameField.style.maxHeight = "60px";
+            title.innerHTML = "Sign Up";
+            signupBtn.classList.remove("disable");
+            signinBtn.classList.add("disable");
+        }
+
+        // Function to handle signup
+        async function handleSignup() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('http://localhost:9090/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (response.ok) {
+                // Redirect to login page
+                title.innerHTML = "Sign In";
+                nameField.style.maxHeight = "0";
+                signupBtn.classList.add("disable");
+                signinBtn.classList.remove("disable");
+            } else {
+                alert('Signup failed!');
+            }
+        }
+
+        // Function to handle signin
+        async function handleSignin(event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('http://localhost:9090/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const token = data.token; // Assuming the JWT token is in the 'token' field
+                localStorage.setItem('jwtToken', token);
+
+                // Fetch and show the video
+                showVideo();
+            } else {
+                alert('Login failed!');
+            }
+        }
+
+        // Function to show video using JWT token
+        async function showVideo() {
+            const token = localStorage.getItem('jwtToken');
+            console.log(token);
+            if (!token) {
+                alert('No JWT token found, please log in first.');
+                return;
+            }
+
+            // Set up the video player
+            const url = 'http://localhost:9090/video.mpd';
+            const player = dashjs.MediaPlayer().create();
+            player.extend("RequestModifier", function () {
+                return {
+                    modifyRequestHeader: function(xhr) {
+                        xhr.setRequestHeader('Authorization', token);
+                        return xhr;
+                    }
+                };
+            }, true);
+
+            player.initialize(document.querySelector('#videoPlayer'), url, true);
+
+            // Show the video container
+            document.getElementById("authContainer").style.display = "none";
+            document.getElementById("videoContainer").style.display = "block";
+        }
+
+        // Event listeners for signup and signin buttons
+        document.getElementById('signupBtn').addEventListener('click', handleSignup);
+        form.addEventListener('submit', handleSignin);
+    </script>
+</body>
+</html>
