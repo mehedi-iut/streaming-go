@@ -68,7 +68,7 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            const response = await fetch('http://localhost:9090/signup', {
+            const response = await fetch('http://ec2-54-89-100-169.compute-1.amazonaws.com:9090/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -92,7 +92,7 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            const response = await fetch('http://localhost:9090/login', {
+            const response = await fetch('http://ec2-54-89-100-169.compute-1.amazonaws.com:9090/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -122,7 +122,7 @@
             }
 
             // Set up the video player
-            const url = 'http://localhost:9090/video.mpd';
+            const url = 'http://ec2-54-89-100-169.compute-1.amazonaws.com:9090/video.mpd';
             const player = dashjs.MediaPlayer().create();
             player.extend("RequestModifier", function () {
                 return {

@@ -24,7 +24,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	convertToJsonResponse(w, map[string]string{"message": "User created successfully"}, http.StatusCreated)
+	ConvertToJsonResponse(w, map[string]string{"message": "User created successfully"}, http.StatusCreated)
 
 }
 
@@ -50,11 +50,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]string{"message": "Login successfully", "token": token}
-	convertToJsonResponse(w, response, http.StatusOK)
+	ConvertToJsonResponse(w, response, http.StatusOK)
 
 }
 
-func convertToJsonResponse(w http.ResponseWriter, response map[string]string, statusCode int) {
+func ConvertToJsonResponse(w http.ResponseWriter, response map[string]string, statusCode int) {
 	//response := map[string]string{"message": msg}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
