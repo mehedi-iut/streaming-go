@@ -39,7 +39,8 @@ func main() {
 
 	protectedRouter.HandleFunc("GET /video.mpd", ph.GetMpd)
 	protectedRouter.HandleFunc("GET /video/", ph.GetChunk)
-	protectedRouter.HandleFunc("GET /upload", ph.ChunkUpload)
+	protectedRouter.HandleFunc("POST /upload", ph.FrontendUpload)
+	//protectedRouter.HandleFunc("POST /upload", ph.FrontendUpload)
 	sm.Handle("/", middlewares.Authenticate(protectedRouter))
 
 	s := http.Server{

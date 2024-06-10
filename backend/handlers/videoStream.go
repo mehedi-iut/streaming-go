@@ -10,19 +10,25 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"video_stream/routes"
+	"video_stream/utils"
 )
 
-const bucket = "stream211125645228"
-const folder = "video"
-const key = "video/"
+var fileName *string
+
+const bucket = "streaming767397690733"
+const folder = "uploads"
+
+//var key = fileName + "/"
 
 type VideoStream struct {
 	l *log.Logger
 }
 
 func NewVideoStream(l *log.Logger) *VideoStream {
+
 	return &VideoStream{l}
 }
 
@@ -40,6 +46,10 @@ func (s VideoStream) GetChunk(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
+
+	s.l.Println("Processing uploaded file....")
+	utils.ChunkVideo("./uploads", *fileName)
+
 	s.l.Println("called for chunk upload")
 	// Load the Shared AWS Configuration (~/.aws/config)
 	cfg, err := config.LoadDefaultConfig(context.TODO())
@@ -51,8 +61,10 @@ func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
 	client := s3.NewFromConfig(cfg)
 
 	// Open the directory
-	log.Printf("Reading directory %s", folder)
-	files, err := os.ReadDir(folder)
+	filePath := filepath.Join(folder, *fileName)
+
+	log.Printf("Reading directory %s", filePath)
+	files, err := os.ReadDir(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,7 +86,7 @@ func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
 			sem <- struct{}{}        // acquire semaphore
 			defer func() { <-sem }() // release semaphore
 
-			filename := filepath.Join(folder, file.Name())
+			filename := filepath.Join(filePath, file.Name())
 			log.Printf("Reading file %s", filename)
 
 			fileHandle, err := os.Open(filename)
@@ -100,7 +112,8 @@ func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
 			}
 
 			log.Printf("Uploading file %s to s3", filename)
-			key := key + fileInfo.Name()
+			s3Folder := *fileName + "/"
+			key := s3Folder + fileInfo.Name()
 			err = bs.UploadLargeObject(bucket, key, buffer)
 			if err != nil {
 				log.Printf("Failed to upload %s to s3: %v", filename, err)
@@ -117,4 +130,57 @@ func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
 	response := map[string]string{"status": "upload completed"}
 	routes.ConvertToJsonResponse(rw, response, http.StatusOK)
 
+}
+
+func (s VideoStream) FrontendUpload(rw http.ResponseWriter, r *http.Request) {
+	s.l.Println("Handling frontend upload")
+	r.ParseMultipartForm(32 << 20)
+
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		s.l.Printf("Failed to get file from form: %v", err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+	baseFilename := strings.TrimSuffix(handler.Filename, filepath.Ext(handler.Filename))
+	fileName = &baseFilename
+
+	// Create a folder to save the file
+	// Create a folder to save the file
+	s.l.Println("Creating file from form")
+	uploadFolder := "./uploads"
+	err = os.MkdirAll(uploadFolder, os.ModePerm)
+	if err != nil {
+		fmt.Println("Error creating upload folder")
+		fmt.Println(err)
+		http.Error(rw, "Unable to create upload folder", http.StatusInternalServerError)
+		return
+	}
+
+	// Create the file
+	filePath := filepath.Join(uploadFolder, handler.Filename)
+	destFile, err := os.Create(filePath)
+	if err != nil {
+		fmt.Println("Error creating the file")
+		fmt.Println(err)
+		http.Error(rw, "Unable to create the file", http.StatusInternalServerError)
+		return
+	}
+	defer destFile.Close()
+
+	// Copy the uploaded file to the destination file
+	_, err = io.Copy(destFile, file)
+	if err != nil {
+		fmt.Println("Error saving the file")
+		fmt.Println(err)
+		http.Error(rw, "Unable to save the file", http.StatusInternalServerError)
+		return
+	}
+
+	// Send response to frontend
+	response := map[string]string{"status": "upload completed"}
+	routes.ConvertToJsonResponse(rw, response, http.StatusOK)
+
+	go s.ChunkUpload(rw, r)
 }
