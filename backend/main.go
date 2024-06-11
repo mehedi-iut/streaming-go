@@ -12,10 +12,19 @@ import (
 	"video_stream/handlers"
 	"video_stream/middlewares"
 	"video_stream/routes"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/joho/godotenv"
+	// "github.com/aws/aws-sdk-go-v2/aws"
+	// "github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func main() {
-	l := log.New(os.Stdout, "video-streaming-api", log.LstdFlags)
+	l := log.New(os.Stdout, "video-streaming-api-", log.LstdFlags)
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	// initialize the database for signup and login
 	db.InitDB()
@@ -27,7 +36,17 @@ func main() {
 		AllowCredentials: true,
 	})
 
-	ph := handlers.NewVideoStream(l)
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("us-east-1"),
+	)
+	if err != nil {
+		l.Fatalf("Unable to initialize AWS session: %v", err)
+	}
+
+	bucketName := "stream258093554996" // replace with your bucket name
+	ph := handlers.NewVideoStream(l, cfg, bucketName)
+
+	// ph := handlers.NewVideoStream(l)
 
 	sm := http.NewServeMux()
 	protectedRouter := http.NewServeMux()
@@ -47,8 +66,8 @@ func main() {
 		Addr:         ":9090",
 		Handler:      cor.Handler(sm),
 		ErrorLog:     l,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  10 * time.Minute,
+		WriteTimeout: 10 * time.Minute,
 		IdleTimeout:  120 * time.Second,
 	}
 

@@ -1,10 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"log"
 	"net/http"
@@ -12,43 +11,92 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 	"video_stream/routes"
 	"video_stream/utils"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+
 )
 
 var fileName *string
 
-const bucket = "streaming767397690733"
+const bucket = "stream258093554996"
 const folder = "uploads"
-
+const injectString = "<BaseURL>http://ec2-3-84-156-177.compute-1.amazonaws.com:9090/video/</BaseURL>"
+// var bucket string = os.Getenv("bucket")
+// var folder string = os.Getenv("folder")
+// var injectString string = os.Getenv("injectString")
 //var key = fileName + "/"
 
 type VideoStream struct {
 	l *log.Logger
+	s3Client *s3.Client
+	bucket string
+
 }
 
-func NewVideoStream(l *log.Logger) *VideoStream {
-
-	return &VideoStream{l}
+func NewVideoStream(l *log.Logger, cfg aws.Config, bucket string) *VideoStream {
+	s3Client := s3.NewFromConfig(cfg)
+	return &VideoStream{l, s3Client, bucket}
 }
 
 func (s VideoStream) GetMpd(rw http.ResponseWriter, r *http.Request) {
 	s.l.Println("called for mpd")
-	filePath := filepath.Join("video", r.URL.Path)
-	http.ServeFile(rw, r, filePath)
+	key := filepath.Join("video", r.URL.Path)
+	// http.ServeFile(rw, r, filePath)
+	s.s3GetFile(rw, r, key)
 }
 
 func (s VideoStream) GetChunk(rw http.ResponseWriter, r *http.Request) {
 	s.l.Println("called for chunk")
 	segments := r.URL.Path[len("/video/"):]
 	chunkPath := filepath.Join("video", segments)
-	http.ServeFile(rw, r, chunkPath)
+	// http.ServeFile(rw, r, chunkPath)
+	s.s3GetFile(rw, r, chunkPath)
+}
+
+func (s VideoStream) s3GetFile(rw http.ResponseWriter, r *http.Request, key string) {
+	req, err := s.s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		http.Error(rw, "Failed to get file from S3", http.StatusInternalServerError)
+		return
+	}
+	defer req.Body.Close()
+
+	// rw.Header().Set("Content-Type", aws.ToString(req.ContentType))
+	// rw.Header().Set("Content-Length", fmt.Sprintf("%d", req.ContentLength))
+	// io.Copy(rw, req.Body)
+
+	buff, buffErr := io.ReadAll(req.Body)
+	if buffErr != nil{
+		s.l.Println(buffErr)
+		http.Error(rw, "Failed to read body", http.StatusInternalServerError)
+		return
+	}
+
+	reader := bytes.NewReader(buff)
+
+	http.ServeContent(rw, r, key, time.Now(), reader)
 }
 
 func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
 
 	s.l.Println("Processing uploaded file....")
 	utils.ChunkVideo("./uploads", *fileName)
+
+	// Adding BaseURL in mpd file
+	// Open the directory
+	filePath := filepath.Join(folder, *fileName)
+	mpdFileName := *fileName + ".mpd"
+	mpdFile := filepath.Join(filePath, mpdFileName)
+	s.l.Println("MPD file path ", mpdFile)
+	utils.InjectString(mpdFile, injectString)
 
 	s.l.Println("called for chunk upload")
 	// Load the Shared AWS Configuration (~/.aws/config)
@@ -61,7 +109,7 @@ func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
 	client := s3.NewFromConfig(cfg)
 
 	// Open the directory
-	filePath := filepath.Join(folder, *fileName)
+	//filePath := filepath.Join(folder, *fileName)
 
 	log.Printf("Reading directory %s", filePath)
 	files, err := os.ReadDir(filePath)

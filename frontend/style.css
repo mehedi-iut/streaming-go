@@ -101,3 +101,100 @@ form p a{
     background: #eaeaea;
     color: #555;
 }
+
+/* Admin Page Styles */
+#adminContainer {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    padding: 50px 60px 70px;
+    width: 90%;
+    max-width: 450px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#adminContainer h1 {
+    font-size: 30px;
+    margin-bottom: 20px;
+    color: #3c00a0;
+    position: relative;
+}
+
+#adminContainer h1::after {
+    content: '';
+    width: 30px;
+    height: 4px;
+    border-radius: 3px;
+    background: #3c00a0;
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#uploadForm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+#uploadForm label {
+    margin-bottom: 10px;
+    color: #333;
+    font-weight: bold;
+}
+
+#uploadForm input[type="file"] {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+#uploadForm button {
+    width: 100%;
+    background: #3c00a0;
+    color: #fff;
+    height: 40px;
+    border-radius: 20px;
+    border: 0;
+    outline: 0;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#uploadForm button:hover {
+    background: #2a0078;
+}
+
+#videoContainer video {
+    width: 100%;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+#logoutBtn, #adminPageBtn, #backToMainBtn {
+    margin-top: 10px;
+    width: 100%;
+    background: #3c00a0;
+    color: #fff;
+    height: 40px;
+    border-radius: 20px;
+    border: 0;
+    outline: 0;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#logoutBtn:hover, #adminPageBtn:hover, #backToMainBtn:hover {
+    background: #2a0078;
+}
