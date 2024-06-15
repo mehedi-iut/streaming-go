@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-func InjectString(filePath, injectString string) {
-	tempFilePath := "uploads/video/video_temp.mpd"
+func InjectString(filePath, tempFilePath, injectString string) {
+	//tempFilePath := "uploads/video/video_temp.mpd"
 
 	inputFile, err := os.Open(filePath)
 	if err != nil {
@@ -53,4 +53,3 @@ func InjectString(filePath, injectString string) {
 
 	fmt.Println("BaseURL successfully injected into MPD file")
 }
-

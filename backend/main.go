@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 	"log"
 	"net/http"
@@ -12,8 +14,6 @@ import (
 	"video_stream/handlers"
 	"video_stream/middlewares"
 	"video_stream/routes"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/joho/godotenv"
 	// "github.com/aws/aws-sdk-go-v2/aws"
 	// "github.com/aws/aws-sdk-go-v2/service/s3"
 )
@@ -43,7 +43,8 @@ func main() {
 		l.Fatalf("Unable to initialize AWS session: %v", err)
 	}
 
-	bucketName := "stream258093554996" // replace with your bucket name
+	// bucketName := "stream258093554996" // replace with your bucket name
+	bucketName := os.Getenv("bucket")
 	ph := handlers.NewVideoStream(l, cfg, bucketName)
 
 	// ph := handlers.NewVideoStream(l)
