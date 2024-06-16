@@ -12,6 +12,7 @@ COPY . ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o go-stream
 
 FROM alpine AS production
+RUN apk update && apk add ffmpeg
 
 COPY --from=Build /app/go-stream .
 

@@ -3,12 +3,17 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
+	"path"
 	"strings"
 )
 
-func InjectString(filePath, tempFilePath, injectString string) {
+func InjectString(filePath, injectString string) {
 	//tempFilePath := "uploads/video/video_temp.mpd"
+	folderPath := path.Dir(filePath)
+	log.Println("Folder path: ", folderPath)
+	tempFilePath := folderPath + "/video_temp.mpd"
 
 	inputFile, err := os.Open(filePath)
 	if err != nil {

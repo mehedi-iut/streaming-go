@@ -88,12 +88,12 @@ func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
 	// Open the directory
 	filePath := filepath.Join(folderPath, *fileName)
 	s.l.Println("File path: ", filePath)
-	mpdFileName := *fileName + ".mpd"
-	mpdTempFileName := *fileName + "_temp" + ".mpd"
-	mpdFile := filepath.Join(filePath, mpdFileName)
-	mpdTempFile := filepath.Join(filePath, mpdTempFileName)
+	// mpdFileName := *fileName + ".mpd"
+	//mpdTempFileName := *fileName + "_temp" + ".mpd"
+	mpdFile := filepath.Join(filePath, "video.mpd")
+	//mpdTempFile := filepath.Join(filePath, mpdTempFileName)
 	s.l.Println("MPD file path ", mpdFile)
-	utils.InjectString(mpdFile, mpdTempFile, injectString)
+	utils.InjectString(mpdFile, injectString)
 
 	s.l.Println("called for chunk upload")
 	// Load the Shared AWS Configuration (~/.aws/config)
