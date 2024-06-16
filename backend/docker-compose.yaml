@@ -21,7 +21,14 @@ services:
       PGADMIN_DEFAULT_PASSWORD: 1670
     volumes:
       - pgadmin-data:/var/lib/pgadmin
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
 
 volumes:
   local_pgdata:
   pgadmin-data:
+  redis-data:
