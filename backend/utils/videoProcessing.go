@@ -32,7 +32,9 @@ func ChunkVideo(path, fileName string) {
 
 	//cmd := exec.Command("ffmpeg", "-i", filePath, "-c", "copy", "-map", "0", "-f", "segment", "-segment_time", "10", "-reset_timestamps", "1", filepath.Join(outputFolder, "chunk_%03d.mp4"))
 	log.Println("Running ffmpeg on uploaded video")
-	cmd := exec.Command("ffmpeg", "-i", videoFilePath, "-map", "0", "-b:v", "2400k", "-s:v", "1920x1080", "-c:v", "libx264", "-f", "dash", filepath.Join(outputFolder, "video.mpd"))
+	watermarkText := "Mehedi"
+	
+	cmd := exec.Command("ffmpeg", "-i", videoFilePath, "-vf", fmt.Sprintf("drawtext=text='%s':fontcolor=white:fontsize=24:x=10:y=10", watermarkText), "-map", "0", "-b:v", "2400k", "-s:v", "1920x1080", "-c:v", "libx264", "-f", "dash", filepath.Join(outputFolder, "video.mpd"))
 	err = cmd.Run()
 	if err != nil {
 		fmt.Println("Error processing the file with ffmpeg")
@@ -40,6 +42,7 @@ func ChunkVideo(path, fileName string) {
 		//http.Error(rw, "Unable to process the file with ffmpeg", http.StatusInternalServerError)
 		return
 	}
+
 
 	log.Println("Finished processing video file")
 }
