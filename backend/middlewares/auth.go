@@ -3,10 +3,11 @@ package middlewares
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"video_stream/utils"
 )
 
-func Authenticate(next http.Handler) http.Handler {
+func Authenticate(next http.Handler, rateLimiter *RedisRateLimiter) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 
@@ -18,6 +19,17 @@ func Authenticate(next http.Handler) http.Handler {
 		userId, err := utils.VerifyToken(token)
 		if err != nil {
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Check rate limit
+		allowed, err := rateLimiter.Allow(strconv.FormatInt(userId, 10))
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		if !allowed {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
 			return
 		}
 

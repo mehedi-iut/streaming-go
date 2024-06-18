@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/cors"
 	"log"
 	"net/http"
@@ -25,6 +26,13 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
+
+	// Create a new rate limiter
+	rateLimiter := middlewares.NewRedisRateLimiter(client, time.Minute, 100) // 100 requests per minute
 
 	// initialize the database for signup and login
 	db.InitDB()
@@ -61,7 +69,7 @@ func main() {
 	protectedRouter.HandleFunc("GET /video/", ph.GetChunk)
 	protectedRouter.HandleFunc("POST /upload", ph.FrontendUpload)
 	//protectedRouter.HandleFunc("POST /upload", ph.FrontendUpload)
-	sm.Handle("/", middlewares.Authenticate(protectedRouter))
+	sm.Handle("/", middlewares.Authenticate(protectedRouter, rateLimiter))
 
 	s := http.Server{
 		Addr:         ":9090",

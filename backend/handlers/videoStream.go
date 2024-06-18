@@ -175,6 +175,14 @@ func (s VideoStream) ChunkUpload(rw http.ResponseWriter, r *http.Request) {
 	response := map[string]string{"status": "upload completed"}
 	routes.ConvertToJsonResponse(rw, response, http.StatusOK)
 
+	err = os.RemoveAll(folderPath)
+	if err != nil{
+		s.l.Printf("Failed to remove directory: %v\n", err)
+		return
+	}
+
+	s.l.Println("Directory removed successfully")
+
 }
 
 func (s VideoStream) FrontendUpload(rw http.ResponseWriter, r *http.Request) {
